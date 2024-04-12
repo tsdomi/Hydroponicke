@@ -1,0 +1,195 @@
+#include <Wire.h>
+#include <TimeLib.h>
+#include <DS1307RTC.h>
+
+
+bool Z1konektorBE = true;
+bool Z2konektorBE = true;
+bool Z3konektorBE = true;
+bool Z4konektorBE = true;
+bool Z5konektorBE = true;
+bool Z6konektorBE = true;
+bool Z7konektorBE = true;
+bool Z8konektorBE = true;
+bool Z9konektorBE = true;
+bool Z10konektorBE = true;
+bool Z11konektorBE = true;
+bool Z12konektorBE = true;
+bool Z13konektorBE = true;
+bool Z14konektorBE = true;
+bool Z15konektorBE = true;
+
+
+//fenyszenzor
+int lightSensor = A0;
+
+//lampak
+int Z2 = 2;
+int Z5 = 3;
+int Z8 = 4; 
+int Z11 = 5;
+int Z14 = 6;
+int Z15 = 7;
+
+//szivatyuk
+int Z1 = 10;
+int Z4 = 11;
+int Z7 = 12;
+int Z10 = 13;
+
+
+
+
+void setup() {
+  pinMode(Z1, OUTPUT);
+  pinMode(Z2, OUTPUT);
+  //pinMode(Z3, OUTPUT);
+  pinMode(Z4, OUTPUT);
+  pinMode(Z5, OUTPUT);
+  //pinMode(Z6, OUTPUT);
+  //pinMode(Z7, OUTPUT);
+  pinMode(Z8, OUTPUT);
+  //pinMode(Z9, OUTPUT);
+  pinMode(Z10, OUTPUT);
+  pinMode(Z11, OUTPUT);
+  //pinMode(Z12, OUTPUT);
+  //pinMode(Z13, OUTPUT);
+  pinMode(Z14, OUTPUT);
+  pinMode(Z15, OUTPUT);
+
+
+  //minden lampat es motrot kikapcsolunk
+  digitalWrite(Z1, HIGH);
+  digitalWrite(Z2, HIGH);
+  //digitalWrite(Z3, HIGH);
+  digitalWrite(Z4, HIGH);
+  digitalWrite(Z5, HIGH);
+  //digitalWrite(Z6, HIGH);
+  digitalWrite(Z7, HIGH);
+  digitalWrite(Z8, HIGH);
+  //digitalWrite(Z9, HIGH);
+  digitalWrite(Z10, HIGH);
+  digitalWrite(Z11, HIGH);
+  //digitalWrite(Z12, HIGH);
+  //digitalWrite(Z13, HIGH);
+  digitalWrite(Z14, HIGH);
+  digitalWrite(Z15, HIGH);
+
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+
+  while(!Serial);
+  delay(200);
+}
+
+void loop() {
+  tmElements_t tm;
+//cerpadlo on/off 15minute/1hour
+  if(RTC.read(tm)){
+    if(tm.Minute<15){ //1. kert szivatyu
+
+      if (Z1konektorBE){
+        digitalWrite(Z1, LOW);
+      }else{
+        digitalWrite(Z1, HIGH);
+      }
+      digitalWrite(Z4, HIGH);
+      digitalWrite(Z7, HIGH);
+      digitalWrite(Z11, HIGH);
+
+    }else if(tm.Minute<30){ //2. kert szivatyu
+
+      digitalWrite(Z1, HIGH);
+      if (Z4konektorBE){
+        digitalWrite(Z4, LOW);
+      }else{
+        digitalWrite(Z4, HIGH);
+      }
+      digitalWrite(Z7, HIGH);
+      digitalWrite(Z11, HIGH);
+
+    }else if(tm.Minute<45){ //3. kert szivatyu
+
+      digitalWrite(Z1, HIGH);
+      digitalWrite(Z4, HIGH);
+      if(Z7konektorBE){
+        digitalWrite(Z7, LOW);
+      }else{
+        digitalWrite(Z7, HIGH);
+      }
+      digitalWrite(Z11, HIGH);
+
+    }else{ //4. kert szivatyu 
+      digitalWrite(Z1, HIGH);
+      digitalWrite(Z4, HIGH);
+      digitalWrite(Z7, HIGH);
+      if (Z11konektorBE){
+        digitalWrite(Z11, LOW);
+      }else{
+        digitalWrite(Z11, HIGH);
+      }
+    }
+  }else{
+     if (RTC.chipPresent()) {
+      Serial.println("The DS1307 is stopped.  Please run the SetTime");
+      Serial.println("example to initialize the time and begin running.");
+      Serial.println();
+    } else {
+      Serial.println("DS1307 read error!  Please check the circuitry.");
+      Serial.println();
+    }
+    delay(9000);
+  }
+
+  //lampak kapcsolasa
+  if(analogRead(lightSensor)>700){
+     //azok a lampak amik feloltodnak, ha megfelelo a napfeny
+    //1. kert lampa
+    if (Z2konektorBE){
+      digitalWrite(Z2, LOW);
+    }else{
+      digitalWrite(Z2, HIGH);
+    }
+    //2. kert lampa
+    if (Z5konektorBE){
+      digitalWrite(Z5, LOW);
+    }else{
+      digitalWrite(Z5, HIGH);
+    }
+    //3. kert lampa
+    if (Z8konektorBE){
+      digitalWrite(Z8, LOW);
+    }else{
+      digitalWrite(Z8, HIGH);
+    }
+    //4. kert lampa
+    if (Z11konektorBE){
+      digitalWrite(Z11, LOW);
+    }else{
+      digitalWrite(Z11, HIGH);
+    }
+    //üvegház belső lampa
+    if (Z14konektorBE){
+      digitalWrite(Z14, LOW);
+    }else{
+      digitalWrite(Z14, HIGH);
+    }
+    //üvegház külső lampa
+    if (Z15konektorBE) {
+      digitalWrite(Z15, LOW);
+    }else{
+      digitalWrite(Z15, HIGH);
+    }
+
+  }else{ //azok a lampak amiknek le kell kapcsolnia a ha nincs feny
+    digitalWrite(Z2, HIGH);
+    digitalWrite(Z5, HIGH); 
+    digitalWrite(Z8, HIGH);
+    digitalWrite(Z11, HIGH);
+    digitalWrite(Z14, HIGH);
+    digitalWrite(Z15, HIGH);
+  }
+  delay(300000); //5 perces keszleltetes az erzekelesek kozott
+  // put your main code here, to run repeatedly:
+  
+}
