@@ -1,49 +1,226 @@
+#include <Wire.h>
+#include <TimeLib.h>
+#include <DS1307RTC.h>
+
+/*
+1. kabel -
+  narancs-feher - GND
+  narancs - Z1
+  zold-feher - Z2
+  kek - Z3
+  kek-feher - Z4
+  zold - Z5
+  barna-feher - Z6
+  barna - Z7
+
+2. kabel-
+  narancs-feher - Z8
+  narancs - Z9
+  zold-feher - Z10
+  kek - Z11
+  kek-feher - Z12
+  zold - Z13
+  barna-feher - Z14
+  barna - Z15
+*/
+
+bool Z1konektorBE = true;
+bool Z2konektorBE = true;
+bool Z3konektorBE = false;
+bool Z4konektorBE = true;
+bool Z5konektorBE = true;
+bool Z6konektorBE = false;
+bool Z7konektorBE = true;
+bool Z8konektorBE = true;
+bool Z9konektorBE = false;
+bool Z10konektorBE = false;
+bool Z11konektorBE = false;
+bool Z12konektorBE = false;
+bool Z13konektorBE = false;
+bool Z14konektorBE = true;
+bool Z15konektorBE = true;  
+
+
+//fenyszenzor
 int lightSensor = A0;
+
+//lampak          
 int Z2 = 2;
 int Z5 = 3;
-int Z8 = 4; 
-int Z11 = 5;
-int Z14 = 6;
-int Z15 = 7;
+int Z8 = 7; 
+int Z11 = 11;
+int Z14 = 13;
+int Z15 = 12;
+
+//szivatyuk
+int Z1 = 5;
+int Z4 = 4;
+int Z7 = 6;
+int Z10 = 10;
 
 
 
 
 void setup() {
+  pinMode(Z1, OUTPUT);
   pinMode(Z2, OUTPUT);
+  //pinMode(Z3, OUTPUT);
+  pinMode(Z4, OUTPUT);
   pinMode(Z5, OUTPUT);
+  //pinMode(Z6, OUTPUT);
+  pinMode(Z7, OUTPUT);
   pinMode(Z8, OUTPUT);
+  //pinMode(Z9, OUTPUT);
+  pinMode(Z10, OUTPUT);
   pinMode(Z11, OUTPUT);
+  //pinMode(Z12, OUTPUT);
+  //pinMode(Z13, OUTPUT);
   pinMode(Z14, OUTPUT);
   pinMode(Z15, OUTPUT);
 
 
-  //azok a lampak amiket nem kell feloltani soha
-  digitalWrite(Z15, HIGH);
-  digitalWrite(Z14, HIGH);
+  //minden lampat es motrot kikapcsolunk
+  digitalWrite(Z1, HIGH);
+  digitalWrite(Z2, HIGH);
+  //digitalWrite(Z3, HIGH);
+  digitalWrite(Z4, HIGH);
+  digitalWrite(Z5, HIGH);
+  //digitalWrite(Z6, HIGH);
+  digitalWrite(Z7, HIGH);
+  digitalWrite(Z8, HIGH);
+  //digitalWrite(Z9, HIGH);
+  digitalWrite(Z10, HIGH);
   digitalWrite(Z11, HIGH);
-  //digitalWrite(Z5, HIGH);
+  //digitalWrite(Z12, HIGH);
+  //digitalWrite(Z13, HIGH);
+  digitalWrite(Z14, HIGH);
+  digitalWrite(Z15, HIGH);
 
   // put your setup code here, to run once:
   Serial.begin(9600);
+
+  while(!Serial);
+  delay(200);
 }
 
 void loop() {
-  Serial.println(analogRead(lightSensor));
-  if(analogRead(lightSensor)>700){ //azok a lampak amik feloltodnak, ha megfelelo a napfeny
-    digitalWrite(Z2, LOW);
-    digitalWrite(Z5, LOW); //ezek a lampakat nem kell most kapcsolni
-    digitalWrite(Z8, LOW);
-    //digitalWrite(Z11, LOW);
-    //digitalWrite(Z14, LOW);
-  }else{ //azok a lampak amiknek le kell kapcsolnia a ha nincs feny
-    digitalWrite(Z2, HIGH);
-    digitalWrite(Z5, HIGH); //ezek a lampakat nem kell most kapcsolni
-    digitalWrite(Z8, HIGH);
-    //digitalWrite(Z11, HIGH);
-    //digitalWrite(Z14, HIGH);
+  tmElements_t tm;
+//cerpadlo on/off 15minute/1hour
+  if(RTC.read(tm)){
+    int timeCerpadlo = tm.Minute;
+    if(timeCerpadlo<15){ //1. kert szivatyu
+
+      if (Z1konektorBE){
+        digitalWrite(Z1, LOW);
+      }else{
+        digitalWrite(Z1, HIGH);
+      }
+      digitalWrite(Z4, HIGH);
+      digitalWrite(Z7, HIGH);
+      digitalWrite(Z10, HIGH);
+
+    }else if(timeCerpadlo<30){ //2. kert szivatyu
+
+      digitalWrite(Z1, HIGH);
+      if (Z4konektorBE){
+        digitalWrite(Z4, LOW);
+      }else{
+        digitalWrite(Z4, HIGH);
+      }
+      digitalWrite(Z7, HIGH);
+      digitalWrite(Z10, HIGH);
+
+    }else if(timeCerpadlo<45){ //3. kert szivatyu
+
+      digitalWrite(Z1, HIGH);
+      digitalWrite(Z4, HIGH);
+      if(Z7konektorBE){
+        digitalWrite(Z7, LOW);
+      }else{
+        digitalWrite(Z7, HIGH);
+      }
+      digitalWrite(Z10, HIGH);
+
+    }else{ //4. kert szivatyu 
+      digitalWrite(Z1, HIGH);
+      digitalWrite(Z4, HIGH);
+      digitalWrite(Z7, HIGH);
+      if (Z10konektorBE){
+        digitalWrite(Z10, LOW);
+      }else{
+        digitalWrite(Z10, HIGH);
+      }
+    }
+  }else{
+     if (RTC.chipPresent()) {
+      Serial.println("The DS1307 is stopped.  Please run the SetTime");
+      Serial.println("example to initialize the time and begin running.");
+      Serial.println();
+    } else {
+      Serial.println("DS1307 read error!  Please check the circuitry.");
+      Serial.println();
+    }
+    delay(9000);
   }
-  delay(300000); //5 perces keszleltetes az erzekelesek kozott
+
+  //lampak kapcsolasa
+  if(analogRead(lightSensor)>700){
+    
+
+     //azok a lampak amik feloltodnak, ha megfelelo a napfeny
+    //1. kert lampa
+    if (Z2konektorBE){
+      digitalWrite(Z2, LOW);
+    }else{
+      digitalWrite(Z2, HIGH);
+    }
+    //2. kert lampa
+    if (Z5konektorBE){
+      digitalWrite(Z5, LOW);
+    }else{
+      digitalWrite(Z5, HIGH);
+    }
+    //3. kert lampa
+    if (Z8konektorBE){
+      digitalWrite(Z8, LOW);
+    }else{
+      digitalWrite(Z8, HIGH);
+    }
+    //4. kert lampa
+    if (Z11konektorBE){
+      digitalWrite(Z11, LOW);
+    }else{
+      digitalWrite(Z11, HIGH);
+    }
+    //üvegház belső lampa
+    if (Z14konektorBE){
+      digitalWrite(Z14, LOW);
+    }else{
+      digitalWrite(Z14, HIGH);
+    }
+    //üvegház külső lampa
+    if (Z15konektorBE) {
+      digitalWrite(Z15, LOW);
+    }else{
+      digitalWrite(Z15, HIGH);
+    }
+
+  }else{ //azok a lampak amiknek le kell kapcsolnia a ha nincs feny
+    
+    
+
+    digitalWrite(Z2, HIGH);
+    digitalWrite(Z5, HIGH); 
+    digitalWrite(Z8, HIGH);
+    digitalWrite(Z11, HIGH);
+    digitalWrite(Z14, HIGH);
+    digitalWrite(Z15, HIGH);
+  }
+
+ 
+
+  delay(60000); //5 perces keszleltetes az erzekelesek kozott
   // put your main code here, to run repeatedly:
   
 }
+
