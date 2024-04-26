@@ -2,42 +2,89 @@
 #include <TimeLib.h>
 #include <DS1307RTC.h>
 
+/*
+1. kabel -
+  narancs-feher - GND
+  narancs - Z1
+  zold-feher - Z2
+  kek - Z3
+  kek-feher - Z4
+  zold - Z5
+  barna-feher - Z6
+  barna - Z7
 
-bool Z1konektorBE = true;
-bool Z2konektorBE = true;
-bool Z3konektorBE = true;
-bool Z4konektorBE = true;
-bool Z5konektorBE = true;
-bool Z6konektorBE = true;
-bool Z7konektorBE = true;
-bool Z8konektorBE = true;
-bool Z9konektorBE = true;
-bool Z10konektorBE = true;
-bool Z11konektorBE = true;
-bool Z12konektorBE = true;
-bool Z13konektorBE = true;
-bool Z14konektorBE = true;
-bool Z15konektorBE = true;
+2. kabel-
+  narancs-feher - Z8
+  narancs - Z9
+  zold-feher - Z10
+  kek - Z11
+  kek-feher - Z12
+  zold - Z13
+  barna-feher - Z14
+  barna - Z15
+*/
+
+bool Z1plugON = true;
+bool Z2plugON = true;
+bool Z3plugON = false;
+bool Z4plugON = true;
+bool Z5plugON = true;
+bool Z6plugON = false;
+bool Z7plugON = true;
+bool Z8plugON = true;
+bool Z9plugON = false;
+bool Z10plugON = false;
+bool Z11plugON = false;
+bool Z12plugON = false;
+bool Z13plugON = false;
+bool Z14plugON = true;
+bool Z15plugON = true;  
 
 
 //fenyszenzor
 int lightSensor = A0;
 
-//lampak
+//lampak          
 int Z2 = 2;
 int Z5 = 3;
-int Z8 = 4; 
-int Z11 = 5;
-int Z14 = 6;
-int Z15 = 7;
+int Z8 = 7; 
+int Z11 = 11;
+int Z14 = 13;
+int Z15 = 12;
 
 //szivatyuk
-int Z1 = 10;
-int Z4 = 11;
-int Z7 = 12;
-int Z10 = 13;
+int Z1 = 5;
+int Z4 = 4;
+int Z7 = 6;
+int Z10 = 10;
 
 
+//variables for database                                           - 8 + 4*tav(2 talan) + 1*hofok(3 hosszu) + 1 + 2*2 vagy tobb + 1*4 + 1*3 + 1*3 + 2*4 --> 48 szamjegy
+bool WLHigh1 = false; //first garden water level HIGH
+bool WLLow1 = false; //first garden water level LOW
+bool WLHigh2 = false;
+bool WLLow2 = false;
+bool WLHigh3 = false;
+bool WLLow3 = false;
+bool WLHigh4 = false;
+bool WLLow4 = false;
+
+//int waterLevel1 = ;
+//int waterLevel2 = ;
+//int waterLevel3 = ;
+//int waterLevel4 = ;
+//int temperature = ;
+
+bool lampsTurnON = false;
+//int lampTurnOFFtime = ;
+
+int peristaticTurn = 0;
+
+//int waterTurbidity = ;
+
+//int waterSolute = ;
+
+//int powerConsumption = ;
 
 
 void setup() {
@@ -47,7 +94,7 @@ void setup() {
   pinMode(Z4, OUTPUT);
   pinMode(Z5, OUTPUT);
   //pinMode(Z6, OUTPUT);
-  //pinMode(Z7, OUTPUT);
+  pinMode(Z7, OUTPUT);
   pinMode(Z8, OUTPUT);
   //pinMode(Z9, OUTPUT);
   pinMode(Z10, OUTPUT);
@@ -58,7 +105,7 @@ void setup() {
   pinMode(Z15, OUTPUT);
 
 
-  //minden lampat es motrot kikapcsolunk
+  //all motor and lamp are off
   digitalWrite(Z1, HIGH);
   digitalWrite(Z2, HIGH);
   //digitalWrite(Z3, HIGH);
@@ -84,49 +131,52 @@ void setup() {
 
 void loop() {
   tmElements_t tm;
-//cerpadlo on/off 15minute/1hour
+  
+//pump on/off 15minute/1hour
   if(RTC.read(tm)){
-    if(tm.Minute<15){ //1. kert szivatyu
+    int timeCerpadlo = tm.Minute;
+    
+    if(timeCerpadlo<15){ //1. garden pump
 
-      if (Z1konektorBE){
+      if (Z1plugON){
         digitalWrite(Z1, LOW);
       }else{
         digitalWrite(Z1, HIGH);
       }
       digitalWrite(Z4, HIGH);
       digitalWrite(Z7, HIGH);
-      digitalWrite(Z11, HIGH);
+      digitalWrite(Z10, HIGH);
 
-    }else if(tm.Minute<30){ //2. kert szivatyu
+    }else if(timeCerpadlo<30){ //2. garden pump
 
       digitalWrite(Z1, HIGH);
-      if (Z4konektorBE){
+      if (Z4kplugON){
         digitalWrite(Z4, LOW);
       }else{
         digitalWrite(Z4, HIGH);
       }
       digitalWrite(Z7, HIGH);
-      digitalWrite(Z11, HIGH);
+      digitalWrite(Z10, HIGH);
 
-    }else if(tm.Minute<45){ //3. kert szivatyu
+    }else if(timeCerpadlo<45){ //3. garden pump
 
       digitalWrite(Z1, HIGH);
       digitalWrite(Z4, HIGH);
-      if(Z7konektorBE){
+      if(Z7plugON){
         digitalWrite(Z7, LOW);
       }else{
         digitalWrite(Z7, HIGH);
       }
-      digitalWrite(Z11, HIGH);
+      digitalWrite(Z10, HIGH);
 
-    }else{ //4. kert szivatyu 
+    }else{ //4. garden pump 
       digitalWrite(Z1, HIGH);
       digitalWrite(Z4, HIGH);
       digitalWrite(Z7, HIGH);
-      if (Z11konektorBE){
-        digitalWrite(Z11, LOW);
+      if (Z10plugON){
+        digitalWrite(Z10, LOW);
       }else{
-        digitalWrite(Z11, HIGH);
+        digitalWrite(Z10, HIGH);
       }
     }
   }else{
@@ -141,47 +191,52 @@ void loop() {
     delay(9000);
   }
 
-  //lampak kapcsolasa
+  //lamp switching
   if(analogRead(lightSensor)>700){
-     //azok a lampak amik feloltodnak, ha megfelelo a napfeny
-    //1. kert lampa
-    if (Z2konektorBE){
+    
+
+     //lamp turn of, if sun is shining
+    //1. garden lamp
+    if (Z2plugON){
       digitalWrite(Z2, LOW);
     }else{
       digitalWrite(Z2, HIGH);
     }
-    //2. kert lampa
-    if (Z5konektorBE){
+    //2. garden lamp
+    if (Z5plugON){
       digitalWrite(Z5, LOW);
     }else{
       digitalWrite(Z5, HIGH);
     }
-    //3. kert lampa
-    if (Z8konektorBE){
+    //3. garden lamp
+    if (Z8plugON){
       digitalWrite(Z8, LOW);
     }else{
       digitalWrite(Z8, HIGH);
     }
-    //4. kert lampa
-    if (Z11konektorBE){
+    //4. garden lamp
+    if (Z11plugON){
       digitalWrite(Z11, LOW);
     }else{
       digitalWrite(Z11, HIGH);
     }
-    //üvegház belső lampa
-    if (Z14konektorBE){
+    //lamp in greenhouse
+    if (Z14plugON){
       digitalWrite(Z14, LOW);
     }else{
       digitalWrite(Z14, HIGH);
     }
-    //üvegház külső lampa
-    if (Z15konektorBE) {
+    //lamp above greenhouse
+    if (Z15plugON) {
       digitalWrite(Z15, LOW);
     }else{
       digitalWrite(Z15, HIGH);
     }
 
-  }else{ //azok a lampak amiknek le kell kapcsolnia a ha nincs feny
+  }else{ //all lamp turn off, if sun doesn't shining 
+    
+    
+
     digitalWrite(Z2, HIGH);
     digitalWrite(Z5, HIGH); 
     digitalWrite(Z8, HIGH);
@@ -189,7 +244,24 @@ void loop() {
     digitalWrite(Z14, HIGH);
     digitalWrite(Z15, HIGH);
   }
-  delay(300000); //5 perces keszleltetes az erzekelesek kozott
+  
+ 
+
+  delay(60000); 
   // put your main code here, to run repeatedly:
   
 }
+
+void print2digits(int number) {
+  if (number >= 0 && number < 10) {
+    Serial.write('0');
+  }
+  Serial.print(number);
+}
+
+
+
+
+
+
+
