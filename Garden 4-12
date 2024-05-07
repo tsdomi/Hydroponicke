@@ -1,3 +1,4 @@
+#include <DHT11.h>
 #include <Wire.h>
 #include <TimeLib.h>
 #include <DS1307RTC.h>
@@ -85,7 +86,16 @@ int peristaticTurn = 0;
 //int waterSolute = ;
 
 //int powerConsumption = ;
+int lampSwitch = 3;
+String minuteLamp = "";
+String hourLamp = "";
 
+DHT11 dht11(8);
+int temperature = 0;
+int humidity = 0;
+
+bool first = true;
+int timer = 0;
 
 void setup() {
   pinMode(Z1, OUTPUT);
@@ -127,11 +137,19 @@ void setup() {
 
   while(!Serial);
   delay(200);
+  
 }
 
 void loop() {
   tmElements_t tm;
-  
+  if(timer >= 15 || first){
+    timer = 0;
+    first = false;
+    temperature = dht11.readTemperature();
+    humidity = dht11.readHumidity();
+  }else{
+    timer+=1;
+  }
 //pump on/off 15minute/1hour
   if(RTC.read(tm)){
     int timeCerpadlo = tm.Minute;
@@ -150,7 +168,7 @@ void loop() {
     }else if(timeCerpadlo<30){ //2. garden pump
 
       digitalWrite(Z1, HIGH);
-      if (Z4kplugON){
+      if (Z4plugON){
         digitalWrite(Z4, LOW);
       }else{
         digitalWrite(Z4, HIGH);
@@ -194,8 +212,29 @@ void loop() {
   //lamp switching
   if(analogRead(lightSensor)>700){
     
+    if(lampSwitch!=1){
+      lampSwitch=1;
+      hourLamp = "";
+      if (tm.Hour >= 0 && tm.Hour < 10) {
+        String nulla = "0";
+        hourLamp = nulla + tm.Hour;
+      }else{
+        hourLamp = tm.Hour;
+      }
 
-     //lamp turn of, if sun is shining
+      minuteLamp = "";
+      if (tm.Minute >= 0 && tm.Minute < 10) {
+        String nulla = "0";
+        minuteLamp = nulla + tm.Minute;
+      }else{
+        minuteLamp = tm.Minute;
+      }
+
+       // if sun shining, arduino send message 
+      //1 -> lamp on; _ _ -> minute, when lamp turn on; _ _ -> hour, when lamp turn on 
+    }
+
+     //lamp turn on, if sun is shining
     //1. garden lamp
     if (Z2plugON){
       digitalWrite(Z2, LOW);
@@ -234,7 +273,29 @@ void loop() {
     }
 
   }else{ //all lamp turn off, if sun doesn't shining 
-    
+    if(lampSwitch!=0 ){
+      lampSwitch=0;
+
+      String hourLamp = "";
+      if (tm.Hour >= 0 && tm.Hour < 10) {
+        String nulla = "0";
+        hourLamp = nulla + tm.Hour;
+      }else{
+        hourLamp = tm.Hour;
+      }
+
+      String minuteLamp = "";
+      if (tm.Minute >= 0 && tm.Minute < 10) {
+        String nulla = "0";
+        minuteLamp = nulla + tm.Minute;
+      }else{
+        minuteLamp = tm.Minute;
+      }
+
+      
+      //0 -> lamp off; _ _ -> minute, when lamp turn off; _ _ -> hour, when lamp turn off 
+      
+    }
     
 
     digitalWrite(Z2, HIGH);
@@ -244,20 +305,17 @@ void loop() {
     digitalWrite(Z14, HIGH);
     digitalWrite(Z15, HIGH);
   }
-  
- 
+  if (timer == 0){
+    Serial.println(lampSwitch +  minuteLamp + hourLamp + "\t" + temperature +"\t" + humidity);
+  }
 
-  delay(60000); 
+
+  delay(10000); 
   // put your main code here, to run repeatedly:
   
 }
 
-void print2digits(int number) {
-  if (number >= 0 && number < 10) {
-    Serial.write('0');
-  }
-  Serial.print(number);
-}
+
 
 
 
